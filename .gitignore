@@ -2,3 +2,4 @@
 *.zip
 *.tar.gz
 data/*
+rp_extract/*
