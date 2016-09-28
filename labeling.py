@@ -10,4 +10,4 @@ for name in names_file:
     name = [ item.strip() for item in name]
     count += 1
     print count
-    label_file.write('%s\t####\t%d\n' % (name[0], count))
+    label_file.write('%s\t####\t%d\t####\t%s\n' % (name[0], count, name[1]))
