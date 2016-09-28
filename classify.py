@@ -6,12 +6,13 @@ from sklearn.externals import joblib
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import pandas as pd
+import random
 import os, csv
 
 
 def SVM(X, y):
     # title('SVM')
-    svm = SVC(kernel = 'rbf')
+    svm = SVC(kernel = 'linear')
     svm.fit(X, y)
     return svm
 
@@ -48,14 +49,23 @@ def title(name):
     print '*' * 20
 
 def loadData(filename):
-    X = []; y = []
+    data = []
     rf = open(filename, 'r')
     reader = csv.reader(rf)
     for line in reader:
-        X.append(map(float, line[0 : -1]))
-        y.append(int(line[-1]))
+        data.append(map(float, line[0 : -1]) + [int(line[-1])])
     rf.close()
-    return X, y
+    return data
+
+# def loadData(filename):
+#     X = []; y = []
+#     rf = open(filename, 'r')
+#     reader = csv.reader(rf)
+#     for line in reader:
+#         X.append(map(float, line[0 : -1]))
+#         y.append(int(line[-1]))
+#     rf.close()
+#     return X, y
 
 def evaluate(model, test_X, test_y):
     predict = model.predict(test_X)
@@ -65,8 +75,30 @@ EMOTION_DATASET = 'data/EmotionSongs/Dataset'
 feature_types = ['mvd', 'rh', 'rp', 'ssd', 'trh', 'tssd']
 
 if __name__ == '__main__':
-    X, y = loadData(EMOTION_DATASET + '/sunmuxin5.csv')
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
+    data = loadData(EMOTION_DATASET + '/sunmuxin5.csv')
+    # X, y = loadData(EMOTION_DATASET + '/sunmuxin5.csv')
+    category = [[], [], [], []]
+    for item in data:
+        category[item[-1] - 1].append(item)
+    train = []; test = []
+    for item in category:
+        tmp_train, tmp_test = train_test_split(item, test_size = 0.2)
+        train.extend(tmp_train)
+        test.extend(tmp_test)
+    
+    random.shuffle(train)
+    random.shuffle(test)
+
+    X_train = []; y_train = []; X_test = []; y_test = []
+    for item in train:
+        X_train.append(item[0 : -1])
+        y_train.append(item[-1])
+    
+    for item in test:
+        X_test.append(item[0 : -1])
+        y_test.append(item[-1])
+
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
 
     scalar = StandardScaler()
     X_train = scalar.fit_transform(X_train)
