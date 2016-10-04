@@ -8,8 +8,11 @@ import numpy as np
 import pandas as pd
 import os, csv
 
-EMOTION_DATASET = 'data/EmotionSongs/Dataset'
-feature_types = ['mvd', 'rh', 'rp', 'ssd', 'trh', 'tssd', 'mfcc']
+# DATASET = 'data/EmotionSongs/Dataset'
+DATASET = 'data/GTZAN/Dataset'
+feature_types = ['mvd', 'rh', 'rp', 'ssd', 'trh', 'tssd']
+
+CLASS = 10
 
 def title(name):
     print '*' * 20
@@ -63,32 +66,31 @@ def evaluate(predict, test_y):
     print metrics.accuracy_score(predict, test_y)
 
 if __name__ == '__main__':
-    mp3names = [[], [], [], []]
+    # mp3names = [[], [], [], []]
+    mp3names = [[]] * CLASS
     mp3_category = {}
-    names_file = open(EMOTION_DATASET + '/mp3names.csv', 'r')
+    names_file = open(DATASET + '/mp3names.csv', 'r')
 
-    for name in names_file: 
+    for name in names_file:
         name = name.split('####')
         name = [ item.strip() for item in name]
-        mp3names[int(name[1])].append(name[0])
+        mp3names[int(name[1])] = mp3names[int(name[1])] + [name[0]]
         mp3_category[name[0]] = int(name[1])
     
     # train_names , test_names = train_test_split(mp3names, test_size = 0.33)
     train_names = []; test_names = [];
-    for i in range(4):
+    for i in range(CLASS):
         tmp_x, tmp_y = train_test_split(mp3names[i], test_size = 0.3)
         train_names = train_names + tmp_x
         test_names = test_names + tmp_y
-    
-    print len(train_names), len(test_names)
 
     vote = {}
     for name in test_names:
-        vote[name] = [0] * 4
+        vote[name] = [0] * CLASS
 
     for feature in feature_types:
         print feature
-        songs = loadData(EMOTION_DATASET + '/%s.csv' % feature)
+        songs = loadData(DATASET + '/%s.csv' % feature)
         test_order = []; X_train = []; X_test = []; y_train = []; y_test = []
         for index, song in enumerate(songs):
             if song[0] in train_names:
@@ -115,8 +117,8 @@ if __name__ == '__main__':
         # model = LR(X_train, y_train)
         # model = SVM(X_train, y_train)
         # model = multiNB(X_train, y_train)
-        model = KNN(X_train, y_train)
-        # model = RF(X_train, y_train)
+        # model = KNN(X_train, y_train)
+        model = RF(X_train, y_train)
         
         predict = model.predict(X_test)
 
@@ -124,11 +126,10 @@ if __name__ == '__main__':
 
         for index, name in enumerate(test_order):
             vote[name][predict[index]] += 1
-        
+
     final_result = {}
     for song in vote:
         final_result[song] = vote[song].index(max(vote[song]))
-    print len(final_result), len(mp3_category)
     count = 0
     for song in final_result:
         if final_result[song] == mp3_category[song]: count += 1
