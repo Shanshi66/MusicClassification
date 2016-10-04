@@ -3,3 +3,4 @@
 *.tar.gz
 data/*
 rp_extract/*
+*.pyc
