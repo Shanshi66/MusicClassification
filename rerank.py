@@ -3,14 +3,17 @@
 import csv
 import numpy as np
 
-EMOTION_DATASET = 'data/EmotionSongs/Dataset'
+# DATASET = 'data/EmotionSongs/Dataset'
+DATASET = 'data/GTZAN/Dataset'
+# CLASS = 4
+CLASS = 10
 feature_types = ['mvd', 'rh', 'rp', 'ssd', 'trh', 'tssd']
 
 
 name2label = {}
 categories = {}
 def loadLabel():
-    label_file = open(EMOTION_DATASET + '/labels.csv', 'r')
+    label_file = open(DATASET + '/labels.csv', 'r')
     for line in label_file:
         line = line.split('####')
         line  = [item.strip() for item in line]
@@ -29,12 +32,12 @@ def calculateDist(va, vb):
     return np.sqrt(sum((va - vb) ** 2))
 
 def rank(feature):
-    data_file = open(EMOTION_DATASET + '/%s.csv' % feature, 'r')
+    data_file = open(DATASET + '/%s.csv' % feature, 'r')
     reader = csv.reader(data_file)
     songs = {}
     for line in reader:
         songs[int(name2label[line[0]])] = map(float, line[1 : -1])
-    rank_file = open(EMOTION_DATASET + '/%s_rank.csv' % feature, 'w')
+    rank_file = open(DATASET + '/%s_rank.csv' % feature, 'w')
     writer = csv.writer(rank_file)
     count = 0
     for s in songs:
@@ -51,14 +54,14 @@ def rank(feature):
     rank_file.close()
     data_file.close()
 
-K = 5
+K = 20
 
 def calculateJaccard(va, vb):
     va = set(va); vb = set(vb)
     return float(len(va & vb)) / len(va | vb)
 
 def rerank(feature):
-    data_file = open(EMOTION_DATASET + '/%s_rank.csv' % feature, 'r')
+    data_file = open(DATASET + '/%s_rank.csv' % feature, 'r')
     reader = csv.reader(data_file)
     rank = {}
     for line in reader:
@@ -66,7 +69,7 @@ def rerank(feature):
         rank[line[0]] = line[1 : -1]
     data_file.close()
 
-    rerank_file = open(EMOTION_DATASET + '/%s_rerank.csv' % feature, 'w')
+    rerank_file = open(DATASET + '/%s_rerank.csv' % feature, 'w')
     writer = csv.writer(rerank_file)
     count = 0
     for s in rank:
@@ -82,14 +85,14 @@ def rerank(feature):
     rerank_file.close()
 
 
-def knn(feature):
-    rerank_file = open(EMOTION_DATASET + '/%s_rerank.csv' % feature, 'r')
+def knnAfterRerank(feature, K = K):
+    rerank_file = open(DATASET + '/%s_rerank.csv' % feature, 'r')
     reader = csv.reader(rerank_file)
     vote = {}
     predict = {}
     for line in reader:
         line = map(int, line)
-        vote[line[0]] = [0, 0, 0, 0]
+        vote[line[0]] = [0] * CLASS
         for i in range(1, K + 1):
             vote[line[0]][categories[line[i]]] += 1
         predict[line[0]] = vote[line[0]].index(max(vote[line[0]]))
@@ -100,15 +103,31 @@ def evaluate(predict):
     count = 0
     for song in predict:
         if predict[song] == categories[song]: count += 1
-    print float(count) / len(predict)
+    return float(count) / len(predict)
+
+def knnBeforeRerank(feature, K = K):
+    rank_file = open(DATASET + '/%s_rank.csv' % feature, 'r')
+    reader = csv.reader(rank_file)
+    vote = {}
+    predict = {}
+    for line in reader:
+        line = map(int, line)
+        vote[line[0]] = [0] * CLASS
+        for i in range(1, K + 1):
+            vote[line[0]][categories[line[i]]] += 1
+        predict[line[0]] = vote[line[0]].index(max(vote[line[0]]))
+    rank_file.close()
+    return predict
 
 if __name__ == '__main__':
     loadLabel()
-    # for f in feature_types:
-    #     rank(f)
-    #     rerank(f)
+    # for f in feature_types: rank(f)
+    # for f in feature_types: rerank(f)
     for f in feature_types:
         print f
-        predict = knn(f)
-        evaluate(predict)
+        predict_knn = knnBeforeRerank(f)
+        accuray_knn = evaluate(predict_knn)
+        predict_rerank_knn = knnAfterRerank(f)
+        accuray_rerank_knn = evaluate(predict_rerank_knn)
+        print "%10.6f\t%10.6f" % (accuray_knn, accuray_rerank_knn)
     
