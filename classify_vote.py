@@ -114,11 +114,11 @@ if __name__ == '__main__':
         scalar = StandardScaler()
         X_train = scalar.fit_transform(X_train)
         X_test = scalar.transform(X_test)
-        # model = LR(X_train, y_train)
+        model = LR(X_train, y_train)
         # model = SVM(X_train, y_train)
         # model = multiNB(X_train, y_train)
         # model = KNN(X_train, y_train)
-        model = RF(X_train, y_train)
+        # model = RF(X_train, y_train)
         
         predict = model.predict(X_test)
 
