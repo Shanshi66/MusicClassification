@@ -32,16 +32,18 @@ def scanD(D, Ck, minSupport):
 def apriori(dataset, minSup, maxk = 5):
     dataset = map(set, dataset)
     L = []; k = 1
+    supportData = {}
     while True:
         if k == 1: Ck = createC1(dataset)
         Lk, supK = scanD(dataset, Ck, minSup)
         print '%10d\t%d' % (len(Lk), k)
         if not Lk: break
-        if k == maxk: break;
         L.append(Lk)
+        supportData.update(supK)
+        if k == maxk: break
         Ck = aprioriGen(L[-1], k)
         k += 1
-    return L
+    return L, supportData
 
 def aprioriGen(Lk, k):
     retList = []
@@ -53,42 +55,46 @@ def aprioriGen(Lk, k):
     
     return set(retList)
 
+
 print 'corel'
 dataset = []
-rf = open(EMOTION + '/corel-1k.txt', 'r')
+rank_file = EMOTION + '/corel-1k_rank_cnn.txt'
+rf = open(rank_file, 'r')
 for line in rf:
-    line = line.split()[1:50]
+    line = line.split()[3:15]
     line = [int(item.strip()) for item in line]
     dataset.append(line)
 rf.close()
 
 # D = [['A','B','C','D'],['B','C','E'],['A','B','C','E'],['B','D','E'],['A','B','C','D']]
-freqent_set = apriori(dataset, 0.1, 5)
+freqent_set, supportData = apriori(dataset, 0.01, 3)
 
-wf = open(EMOTION + '/corel_freq.txt', 'w')
+freq_file = EMOTION + '/corel_cnn_freq.txt'
+wf = open(freq_file, 'w')
 for item in freqent_set:
     item = list(item)
     item = [list(it) for it in item]
     for it in item:
-        wf.write('%s\n' % (' '.join([str(i) for i in it])))
+        wf.write('%s %f\n' % (' '.join([str(i) for i in it]), supportData[frozenset(it)]))
 wf.close()
 
-feature_types = ['mvd', 'rh', 'rp', 'ssd', 'trh', 'tssd']
 
-for f in feature_types:
-    print f
-    dataset = []
-    rf = open(EMOTION + '/%s_rank.csv' % f, 'r')
-    for line in rf:
-        line = line.split(',')[0:50]
-        line = [int(item.strip()) for item in line]
-        dataset.append(line)
-    rf.close()
-    freqent_set = apriori(dataset, 0.1, 5)
-    wf = open(EMOTION + '/%s_freq.txt' % f, 'w')
-    for item in freqent_set:
-        item = list(item)
-        item = [list(it) for it in item]
-        for it in item:
-            wf.write('%s\n' % (' '.join([str(i) for i in it])))
-    wf.close()
+# feature_types = ['mvd', 'rh', 'rp', 'ssd', 'trh', 'tssd']
+
+# for f in feature_types:
+#     print f
+#     dataset = []
+#     rf = open(EMOTION + '/%s_rank.csv' % f, 'r')
+#     for line in rf:
+#         line = line.split(',')[0:50]
+#         line = [int(item.strip()) for item in line]
+#         dataset.append(line)
+#     rf.close()
+#     freqent_set = apriori(dataset, 0.1, 5)
+#     wf = open(EMOTION + '/%s_freq.txt' % f, 'w')
+#     for item in freqent_set:
+#         item = list(item)
+#         item = [list(it) for it in item]
+#         for it in item:
+#             wf.write('%s\n' % (' '.join([str(i) for i in it])))
+#     wf.close()
