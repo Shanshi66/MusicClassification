@@ -1,14 +1,13 @@
 #coding = utf8
 
 DATASET = 'data/EmotionSongs/Dataset'
-freq_file  = DATASET + '/corel_cnn_freq.txt'
-rank_file = DATASET + '/corel-1k_rank_cnn.txt'
 
 freqent_set = {}
 
-def loadFreq():
+def loadFreq(freq_file):
     rf = open(freq_file, 'r')
     _max = -1
+    _min = 1000
     for line in rf:
         line = line.split()
         items = map(int, line[:-1])
@@ -22,10 +21,11 @@ def loadFreq():
             # if not freqent_set.has_key(item): freqent_set[item] = set(line)
             # else: freqent_set[item] = freqent_set[item] | set(line)
             _max = max(_max, len(freqent_set[item]))
-    print _max
+            _min = min(_min, len(freqent_set[item]))
+    print _max, _min
     rf.close()
 
-def accuracyBeforeAprori(k = 20):
+def accuracyBeforeAprori(rank_file, k = 20):
     rf = open(rank_file, 'r')
     accuracy = []
     for line in rf:
@@ -34,10 +34,10 @@ def accuracyBeforeAprori(k = 20):
         for i in xrange(k):
             if line[i] / 100 == line[0] / 100: count += 1
         accuracy.append(float(count) / k)
-    print sum(accuracy) / len(accuracy)
     rf.close()
+    return sum(accuracy) / len(accuracy)
 
-def accuracyAfterAprori(k = 20):
+def accuracyAfterAprori(rank_file, k = 20):
     rf = open(rank_file, 'r')
     accuracy = []
     for line in rf:
@@ -50,10 +50,14 @@ def accuracyAfterAprori(k = 20):
             #         if len(current_knn) >= k: break
             #         if item != line[0]: current_knn.add(item)
             # else:
-            if len(freqent_set[line[0]]) > k:
+            # if len(freqent_set[line[0]]) > k / 2:
+            # bias = k / 2
+            bias = k
+            # bias = 2
+            if len(freqent_set[line[0]]) > bias:
                 freq_list = sorted(freqent_set[line[0]].iteritems(), key = lambda it : it[1] , reverse = True)
                 freq_list = [ x[0] for x in freq_list]
-                current_knn = current_knn | set(freq_list[0:k])
+                current_knn = current_knn | set(freq_list[0 : bias])
             else:
                 current_knn = current_knn | set(freqent_set[line[0]])
         for item in line:
@@ -62,12 +66,26 @@ def accuracyAfterAprori(k = 20):
         for item in current_knn:
             if item / 100 == line[0] / 100: count += 1
         accuracy.append(float(count) / k)
-    print sum(accuracy) / len(accuracy)
     rf.close()
+    return sum(accuracy) / len(accuracy)
 
-loadFreq()
-for item in freqent_set:
-    print item
-    print sorted(freqent_set[item].iteritems(), key = lambda it: it[1], reverse = True)
-accuracyBeforeAprori(20)
-accuracyAfterAprori(20)
+def evaluate(rank_file, freq_file):
+    loadFreq(freq_file)
+    print '%10s %10s %10s %10s' % ('id', 'before', 'after', 'improvement')
+    for i in range(1, 21):
+        improvement = accuracyAfterAprori(rank_file, i) - accuracyBeforeAprori(rank_file, i)
+        print '%10d %10f %10f %10f' % (i, 
+                                       round(accuracyBeforeAprori(rank_file,i), 4), 
+                                       round(accuracyAfterAprori(rank_file,i), 4), 
+                                       round(improvement, 4))
+
+if __name__ == '__main__':
+    # freq_file  = DATASET + '/corel_cnn_freq.txt'
+    # rank_file = DATASET + '/corel-1k_rank_cnn.txt'
+    rank_file = DATASET + '/corel-1k.txt'
+    freq_file = DATASET + '/corel_freq.txt'
+
+    # rank_file = DATASET + '/corel-10k_graph_fusion_results.txt'
+    # freq_file = DATASET + '/corel-10k_freq.txt'
+    evaluate(rank_file, freq_file)
+
