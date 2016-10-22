@@ -2,7 +2,7 @@
 
 import sys
 
-EMOTION = 'data/EmotionSongs/Dataset'
+DATASET = 'data/EmotionSongs/Dataset'
 
 def createC1(dataSet):
     C1 = []
@@ -55,26 +55,37 @@ def aprioriGen(Lk, k):
     
     return set(retList)
 
+# rank_file = DATASET + '/corel-10k_graph_fusion_results.txt'
+# freq_file = DATASET + '/corel-10k_freq.txt'
 
-print 'corel'
+# rank_file = DATASET + '/corel-1k.txt'
+# freq_file = DATASET + '/corel_freq.txt'
+
+rank_file = DATASET + '/corel-1k_graph_fusion_results.txt'
+freq_file = DATASET + '/corel-1k_graph_fusion_freq.txt'
+
+# rank_file = EMOTION + '/corel-1k_rank_cnn.txt'
+# freq_file = EMOTION + '/corel_cnn_freq.txt'
+
 dataset = []
-rank_file = EMOTION + '/corel-1k_rank_cnn.txt'
 rf = open(rank_file, 'r')
 for line in rf:
-    line = line.split()[3:15]
+    line = line.split()[1 : ]
     line = [int(item.strip()) for item in line]
     dataset.append(line)
 rf.close()
 
 # D = [['A','B','C','D'],['B','C','E'],['A','B','C','E'],['B','D','E'],['A','B','C','D']]
-freqent_set, supportData = apriori(dataset, 0.01, 3)
+freqent_set, supportData = apriori(dataset, 0.10, 3)
 
-freq_file = EMOTION + '/corel_cnn_freq.txt'
 wf = open(freq_file, 'w')
 for item in freqent_set:
     item = list(item)
     item = [list(it) for it in item]
     for it in item:
+        if len(it) == 1: continue
+        # if len(it) == 2: continue
+        # if len(it) == 3: continue
         wf.write('%s %f\n' % (' '.join([str(i) for i in it]), supportData[frozenset(it)]))
 wf.close()
 
